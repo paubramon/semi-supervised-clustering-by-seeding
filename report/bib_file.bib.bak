@@ -1,0 +1,10 @@
+% Encoding: UTF-8
+
+@InProceedings{Basu02semi-supervisedclustering,
+  author    = {Sugato Basu and Arindam Banerjee and R. Mooney},
+  title     = {Semi-supervised Clustering by Seeding},
+  booktitle = {In Proceedings of 19th International Conference on Machine Learning (ICML-2002},
+  year      = {2002},
+}
+
+@Comment{jabref-meta: databaseType:biblatex;}
