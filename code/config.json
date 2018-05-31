@@ -1,0 +1,5 @@
+{
+  "num_clusters": 20,
+  "max_iterations": 100,
+  "tolerance": 0.00005
+}
