@@ -1,6 +1,7 @@
 \documentclass[11pt]{article}
-\usepackage[top=3.0cm, bottom=3.0cm, left=3.0cm, right=3.0cm]{geometry}
-
+\usepackage[utf8]{inputenc}
+\usepackage[english]{babel}
+%\usepackage[top=2.54cm, bottom=2.54cm, left=2.54cm, right=2.54cm]{geometry}
 \usepackage{tabu}
 \usepackage{array}
 \usepackage{verbatim}
@@ -11,6 +12,8 @@
 \usepackage{multicol}
 \usepackage{epstopdf}
 \usepackage{subfigure}
+\usepackage[lofdepth,lotdepth]{subfig}
+\usepackage{booktabs}
 \usepackage{tcolorbox}
 \usepackage{makecell}
 \usepackage{textcomp}
@@ -19,42 +22,133 @@
 \usepackage{graphicx}
 \usepackage{array,booktabs,calc}
 \usepackage{caption}
+\usepackage{url}
 \usepackage[parfill]{parskip}
+\usepackage{color}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define style for code
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+	backgroundcolor=\color{backcolour},   
+	commentstyle=\color{codegreen},
+	keywordstyle=\color{magenta},
+	numberstyle=\tiny\color{codegray},
+	stringstyle=\color{codepurple},
+	basicstyle=\ttfamily\tiny,
+	breakatwhitespace=false,         
+	breaklines=true,                 
+	captionpos=b,                    
+	keepspaces=true,                 
+	numbers=left,                    
+	numbersep=5pt,                  
+	showspaces=false,                
+	showstringspaces=false,
+	showtabs=false,                  
+	tabsize=2
+}
+\lstset{style=mystyle}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 \parindent0pt
 \newcommand{\verbatimfont}[1]{\renewcommand{\verbatim@font}{\ttfamily#1}}
-
-\bibliographystyle{plain}
+\usepackage{placeins}
+\usepackage[style=nature]{biblatex}
+\addbibresource{bibfile.bib}
 
 \begin{document}
-	
-\title{Unsupervised Learning \linebreak Semi-Supervised Clustering by Seeding}
-\date{May 2, 2018}
+%\includepdf[pages={1}]{assignment_cover.pdf}
+\title{URL Project: Semi-Supervised Clustering by Seeding}
+\date{June 2, 2018}
 \author{Pau Bramon}
 \maketitle
 
-\tableofcontents
+\section{Introduction}
+
+The aim of this report is explaining the main characteristics of the two clustering algorithms called \textit{Seeded-KMeans} and \textit{Constrained-KMeans}, described in \cite{Basu:2002:SCS:645531.656012}. The two algorithms will be implemented in Python2.7 and the results obtained with them will be presented. \\
+The first part of this report focuses on how the two algorithms were implemented, how to use them and small improvements that were used to speed them up. This first section will not explore all the details within the implementation, but it will explain the most important aspects. \\
+The second part instead, analyses the results obtained with both algorithms and replicates some of the experiments performed in the original paper. In this part, we will see what the benefits of using semi-supervised learning are and the differences between the two methods. Furthermore, the results will be compared with the ones obtained with a totally unsupervised \textit{Kmeans}. 
+
+\section{Implementation}
+
+This part of the report focuses on the implementation of the two algorithms. The two algorithms can be found in the file \textit{semi\_supervised\_KMeans.py}, defined as two different classes called \textit{SeededKMeans} and \textit{ConstrainedKMeans}. Since the two algorithms are very similar and based on the same principle, the two classes share most of their methods. 
+
+\subsection{Algorithms}
+
+\textit{Seeded-KMeans} and \textit{Constrained-KMeans} are basically KMeans clustering algorithms where we use some labelled information to improve the performance.\\
+Seeded-KMeans aims to solve one of main problems in the normal KMeans, which is the initialization. While KMeans uses random seeds to initialize the clustering algorithms, the semi-supervised method uses the labelled instances as seeds. In the case where we have more than one labelled instance per class, we define the initial centroids for each cluster as the mean point of all instances of that particular class. After the initialization though, the label information of these seeds is not used any more. In the implementation of the Seeded-KMeans, after the initialization, all seeds are added as unlabelled instances to the dataset (but this can be changed by means of the parameter append\_seeds).\\
+The first obvious advantage of the Seeded KMeans is that we do not have to run the algorithm many times with different initialization seeds, like we do in KMeans, since the seeds are supervised. Furthermore, there are some other advantages in terms of performance, that we will study in the following section. 
+
+Constrained-KMeans, not only uses the labelled data during the initialization, but also uses it during training. In that case, every time we assign each datapoint to a cluster, we make sure that the instances with label information are assigned to the correct class. So instead of getting rid of the label information after the initialization, like we did in the previous algorithm, in that case we continue using this information in the cluster assignment step.
+
+\subsection{Implementation}
+
+In this section we will briefly describe the main parts of the implementation. As it was already explained, most of the methods in both classes are identical or very similar; the differences between the two will be explained in detail. 
+
+\subsubsection{Execution of the algorithms}
+
+The two classes are defined similarly to the KMeans from \textit{scikit-learn}. In order to use the algorithms, one have to create an object of the class SeededKMeans and ConstrainedKMeans with the following parameters:
+\begin{enumerate}
+	\item seed\_datapoints: Tuple defining the labelled instances. The first element of the tuple must contain the datapoints and the second element the labels. The datapoints should be described using a numpy NxM matrix, being N the number of instances and M the number of features. The labels should be described by a numpy array with N elements. 
+	\item n\_clusters: number of clusters to find. If the number of seeds provided does not contain all possible clusters, random seeds will be used to initialize the missing centroids. 
+	\item max\_iter: the maximum number of iterations the algorithm will perform to converge (the same used in KMeans). 
+	\item tolerance: the difference considered in the convergence condition (the same used in KMeans).
+	\item append\_seeds (only in the Seeded-KMeans): if it is set to true, after the initialization, the algorithm will add the seeds without the label to the dataset, so they will be used in the clustering algorithm as normal unlabelled instances. 
+\end{enumerate}
+
+Once the class is created, the method \textit{fit(X)} should be called to find the clusters present in the X data. Once the clusters have been computed, one can get the labels for new datapoints using the \textit{predict(X)}, which will find the closest centroid for each new datapoint.
+
+\subsubsection{fit(X) method}
+
+This method find the different clusters for a given dataset. Internally, first checks the data input is correct and if it is, it runs the method called \textit{\_fit}. This method basically does the following three steps:
+\begin{enumerate}
+	\item \textit{\_initialize\_centroids()}: This method calculate the initial centroids using the seeded data. For each class (defined with n\_clusters in the initial parameters) it finds all seeds with the correct label and compute the mean of those points the find the correct centroid. If some class was not represented by any seed, the initial centroid would be initialized with a random point from the dataset. Note that, differently from the KMeans, this algorithm is only computed once, since it is supposed to have a deterministic initialization (in the seeds, all classes should be represented). Therefore, if the seeds do not contain all possible classes, the performance could decrease a lot due to possible bad initializations.
+	\item \textit{append seeds}: If the option append\_seeds is set to true, after the initialization of centroids, the seeds will be added to the data. For the Seeded KMeans, the label information will be forget. For the Constrained KMeans the label information will also be used in the fitting loop.
+	\item \textit{\_fitting\_loop()}: For the Seeded KMeans, this is the same loop used in the normal KMeans algorithm, where we will iteratively assign a centroid to each datapoint and recompute the new centroids until the maximum number of iterations is reach or the convergence condition is met. \\
+	For the Constrined KMeans, this loop will differ a bit from the KMeans algorithm. In this case, in the assignment of centroids to each datpoint, the seed data will be constrained to have the true labels. 	
+\end{enumerate}
+
+An important thing to mention is that in order to assign the correct centroid to each datapoint in the fitting loop, initially, the step of computing the euclidean distance to each centroid and selecting the one with the minimum distance was performed manually using the code in Listing \ref{list:Euclidean_code}. However, for computational efficiency, this step was changed by the method from \textit{sklearn.metrics} called \textit{pairwise\_distances\_argmin\_min}, which makes this computation much more efficient.
+
+\lstinputlisting[language=Python,caption=Initial Python code for computing the cluster assignment., label=list:Euclidean_code]{code_euclidean.py}
+
+\subsubsection{Predict method}
+
+This method is basically created to test the clusters obtained with a new dataset. It basically check if the input format is correct and it performs the same cluster assignment done in the \_fitting\_loop(). 
+
+\section{Results}
+
+In this section, an analysis of the results obtained with the two implementations described will be performed. Firstly, we will experiment with synthetic datasets the clustering with the two semi-supervised algorithms and the KMeans algorithm. Secondly, the experiments performed in \cite{Basu:2002:SCS:645531.656012} with the 20 Newsgroup dataset will be replicated and analysed. 
+
+\subsection{Experiments with synthetic data}
+
+\subsection{Experiments with 20 Newsgroup}
 
 \newpage
-
-\section{Introduction}\label{sec:Introduction}
-
-Implementation of the Semi-Supervised clustering algorithm described in \cite{Basu02semi-supervisedclustering}.
-
+%%\section*{References}
+\nocite{*}
+\printbibliography
 
 
 %\begin{figure}[H]
 %	\centering
-%	\subfigure[Accuracy]{\includegraphics[width=0.45\textwidth]{../final_results/CNN_complex/CNN_complex/model_accuracy.pdf}}
-%	\subfigure[Loss]{\includegraphics[width=0.45\textwidth]{../final_results/CNN_complex/CNN_complex/model_loss.pdf}}
-%	\caption{Results obtained with the CNN described in \cite{Springenberg}.}
-%	\label{fig:accuracy_loss_CNN_complex}
-%\end{figure} 
+%	\subfigure[original image]{\includegraphics[width=0.21\textwidth]{images/test_images/base_single.jpg}}
+%	\subfigure[mirror effect]{\includegraphics[width=0.21\textwidth]{images/test_images/mirror.jpg}}
+%	\subfigure[inverse]{\includegraphics[width=0.21\textwidth]{images/test_images/inverse.jpg}}
+%	\subfigure[light change]{\includegraphics[width=0.23\textwidth]{images/test_images/light.jpg}}
+%	\subfigure[scale change]{\includegraphics[width=0.22\textwidth]{images/test_images/scale2.jpg}}	
+%	\subfigure[occlusion 1]{\includegraphics[width=0.22\textwidth]{images/test_images/oclusion1.jpg}}
+%	\subfigure[occlusion 2]{\includegraphics[width=0.22\textwidth]{images/test_images/oclusion3.jpg}}
+%	\subfigure[perspective 1]{\includegraphics[width=0.22\textwidth]{images/test_images/prespective2.jpg}}
+%	\subfigure[perspective 2]{\includegraphics[width=0.22\textwidth]{images/test_images/prespective3.jpg}}
+%	\subfigure[rotated image]{\includegraphics[width=0.3\textwidth]{images/test_images/rotated90.jpg}}
+%	\caption{Images created and used for the object recognition analysis.}
+%	\label{fig:dataset}
+%\end{figure}
 
-\section{Conclusions}\label{sec:Conclusions}
-
-
-\newpage
-%%\section*{References}
-\bibliography{bib_file}
 
 \end{document}

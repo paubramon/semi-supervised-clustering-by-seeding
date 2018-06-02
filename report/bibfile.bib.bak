@@ -1,0 +1,18 @@
+% Encoding: UTF-8
+
+@InProceedings{Basu:2002:SCS:645531.656012,
+  author    = {Basu, Sugato and Banerjee, Arindam and Mooney, Raymond J.},
+  title     = {Semi-supervised Clustering by Seeding},
+  booktitle = {Proceedings of the Nineteenth International Conference on Machine Learning},
+  year      = {2002},
+  series    = {ICML '02},
+  publisher = {Morgan Kaufmann Publishers Inc.},
+  isbn      = {1-55860-873-7},
+  pages     = {27--34},
+  url       = {http://dl.acm.org/citation.cfm?id=645531.656012},
+  acmid     = {656012},
+  address   = {San Francisco, CA, USA},
+  numpages  = {8},
+}
+
+@Comment{jabref-meta: databaseType:biblatex;}
