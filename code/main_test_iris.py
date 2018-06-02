@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.metrics import accuracy_score, mutual_info_score
-from seeded_KMeans import SeededKMeans, ConstrainedKMeans
+from semi_supervised_KMeans import SeededKMeans, ConstrainedKMeans
 from prepare_iris_data import prepareIrisData
 import matplotlib.pyplot as plt
 
